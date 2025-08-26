@@ -1,118 +1,175 @@
-/**
- * Sample React Native App
- * https://github.com/facebook/react-native
- *
- * @format
- */
+import React, {useState, useEffect} from 'react';
+import {SafeAreaProvider} from 'react-native-safe-area-context';
+import {GestureHandlerRootView} from 'react-native-gesture-handler';
+import {NavigationContainer} from '@react-navigation/native';
+import {createStackNavigator} from '@react-navigation/stack';
+import {View, ActivityIndicator} from 'react-native';
+import {MusicProvider, useMusic} from './src/context/MusicContext';
+import {GlobalMiniPlayer} from './src/components/GlobalMiniPlayer';
+import {AnimeErrorProvider} from './src/utils/AnimeErrorHandler';
 
-import React from 'react';
-import type {PropsWithChildren} from 'react';
-import {
-  SafeAreaView,
-  ScrollView,
-  StatusBar,
-  StyleSheet,
-  Text,
-  useColorScheme,
-  View,
-} from 'react-native';
+import {SplashScreen} from './src/screens/SplashScreen';
+import {MusicHomeScreen} from './src/screens/MusicHomeScreen';
+import {LocalSongsScreen} from './src/screens/LocalSongsScreen';
+import {HomeScreen} from './src/screens/HomeScreen';
+import {UploadScreen} from './src/screens/UploadScreen';
+import {EasyUploadScreen} from './src/screens/EasyUploadScreen';
+import {RealUploadScreen} from './src/screens/RealUploadScreen';
+import {ProfileScreenNew} from './src/screens/ProfileScreenNew';
+import {SettingsScreen} from './src/screens/SettingsScreen';
+import {AdminScreen} from './src/screens/AdminScreen';
+import {MusicPlayerFinal} from './src/screens/MusicPlayerFinal';
+import {GoogleMusicScreen} from './src/screens/GoogleMusicScreen';
 
-import {
-  Colors,
-  DebugInstructions,
-  Header,
-  LearnMoreLinks,
-  ReloadInstructions,
-} from 'react-native/Libraries/NewAppScreen';
+import {Database} from './src/database/Database';
+import {AuthService} from './src/services/AuthService';
+import {UserModel} from './src/database/models/User';
+import {theme} from './src/theme';
 
-type SectionProps = PropsWithChildren<{
-  title: string;
-}>;
+export type RootStackParamList = {
+  MusicHome: undefined;
+  Home: undefined;
+  LocalSongs: undefined;
+  GoogleMusic: undefined;
+  Browse: undefined;
+  Playlists: undefined;
+  Favorites: undefined;
+  Downloads: undefined;
+  Upload: undefined;
+  EasyUpload: undefined;
+  RealUpload: undefined;
+  Profile: undefined;
+  Settings: undefined;
+  Admin: undefined;
+  MusicPlayer: {song: any};
+};
 
-function Section({children, title}: SectionProps): React.JSX.Element {
-  const isDarkMode = useColorScheme() === 'dark';
-  return (
-    <View style={styles.sectionContainer}>
-      <Text
-        style={[
-          styles.sectionTitle,
-          {
-            color: isDarkMode ? Colors.white : Colors.black,
-          },
-        ]}>
-        {title}
-      </Text>
-      <Text
-        style={[
-          styles.sectionDescription,
-          {
-            color: isDarkMode ? Colors.light : Colors.dark,
-          },
-        ]}>
-        {children}
-      </Text>
-    </View>
-  );
-}
+const RootStack = createStackNavigator<RootStackParamList>();
 
-function App(): React.JSX.Element {
-  const isDarkMode = useColorScheme() === 'dark';
+function AppContent() {
+  const [isLoading, setIsLoading] = useState(true);
+  const [showSplash, setShowSplash] = useState(true);
+  const [currentRoute, setCurrentRoute] = useState('MusicHome');
+  const {currentSong, isPlaying, setIsPlaying, stopSong} = useMusic();
+  const navigationRef = React.useRef<any>(null);
 
-  const backgroundStyle = {
-    backgroundColor: isDarkMode ? Colors.darker : Colors.lighter,
+  useEffect(() => {
+    initializeApp();
+  }, []);
+
+  const initializeApp = async () => {
+    try {
+      const db = Database.getInstance();
+      await db.init();
+      
+      // Create admin user if doesn't exist
+      const userModel = new UserModel();
+      const adminUser = await userModel.findByEmail('admin@animusic.com');
+      if (!adminUser) {
+        await userModel.create({
+          email: 'admin@animusic.com',
+          name: 'Admin',
+          role: 'admin',
+        });
+      }
+      
+      // Auto-login as guest if not authenticated
+      const authService = AuthService.getInstance();
+      const currentUser = await authService.getCurrentUser();
+      if (!currentUser) {
+        await authService.createGuestUser();
+      }
+      
+      setIsLoading(false);
+    } catch (error) {
+      console.error('App initialization error:', error);
+      setIsLoading(false);
+    }
+  };
+
+  const handleSplashComplete = () => {
+    setShowSplash(false);
+  };
+
+  if (showSplash) {
+    return <SplashScreen onAnimationComplete={handleSplashComplete} />;
+  }
+
+  if (isLoading) {
+    return (
+      <View style={{flex: 1, justifyContent: 'center', alignItems: 'center'}}>
+        <ActivityIndicator size="large" color={theme.colors.primary.black} />
+      </View>
+    );
+  }
+
+  const handlePlayPause = async () => {
+    if (isPlaying) {
+      const MusicService = (await import('./src/services/MusicService')).default;
+      await MusicService.pause();
+      setIsPlaying(false);
+    } else {
+      const MusicService = (await import('./src/services/MusicService')).default;
+      await MusicService.play();
+      setIsPlaying(true);
+    }
   };
 
   return (
-    <SafeAreaView style={backgroundStyle}>
-      <StatusBar
-        barStyle={isDarkMode ? 'light-content' : 'dark-content'}
-        backgroundColor={backgroundStyle.backgroundColor}
-      />
-      <ScrollView
-        contentInsetAdjustmentBehavior="automatic"
-        style={backgroundStyle}>
-        <Header />
-        <View
-          style={{
-            backgroundColor: isDarkMode ? Colors.black : Colors.white,
+    <GestureHandlerRootView style={{flex: 1}}>
+      <SafeAreaProvider>
+        <NavigationContainer 
+          ref={navigationRef}
+          onStateChange={() => {
+            const currentRouteName = navigationRef.current?.getCurrentRoute()?.name;
+            if (currentRouteName) {
+              setCurrentRoute(currentRouteName);
+            }
           }}>
-          <Section title="Step One">
-            Edit <Text style={styles.highlight}>App.tsx</Text> to change this
-            screen and then come back to see your edits.
-          </Section>
-          <Section title="See Your Changes">
-            <ReloadInstructions />
-          </Section>
-          <Section title="Debug">
-            <DebugInstructions />
-          </Section>
-          <Section title="Learn More">
-            Read the docs to discover what to do next:
-          </Section>
-          <LearnMoreLinks />
-        </View>
-      </ScrollView>
-    </SafeAreaView>
+          <RootStack.Navigator
+            screenOptions={{
+              headerShown: false,
+              cardStyle: {backgroundColor: theme.colors.background.light},
+            }}>
+            <RootStack.Screen name="MusicHome" component={MusicHomeScreen} />
+            <RootStack.Screen name="Home" component={HomeScreen} />
+            <RootStack.Screen name="LocalSongs" component={LocalSongsScreen} />
+            <RootStack.Screen name="GoogleMusic" component={GoogleMusicScreen} />
+            <RootStack.Screen name="Browse" component={GoogleMusicScreen} />
+            <RootStack.Screen name="Playlists" component={HomeScreen} />
+            <RootStack.Screen name="Favorites" component={HomeScreen} />
+            <RootStack.Screen name="Downloads" component={HomeScreen} />
+            <RootStack.Screen name="Upload" component={UploadScreen} />
+            <RootStack.Screen name="EasyUpload" component={EasyUploadScreen} />
+            <RootStack.Screen name="RealUpload" component={RealUploadScreen} />
+            <RootStack.Screen name="Profile" component={ProfileScreenNew} />
+            <RootStack.Screen name="Settings" component={SettingsScreen} />
+            <RootStack.Screen name="Admin" component={AdminScreen} />
+            <RootStack.Screen name="MusicPlayer" component={MusicPlayerFinal} />
+          </RootStack.Navigator>
+          
+          <GlobalMiniPlayer
+            navigation={navigationRef.current}
+            currentSong={currentSong}
+            isPlaying={isPlaying}
+            onPlayPause={handlePlayPause}
+            onClose={stopSong}
+            currentRoute={currentRoute}
+          />
+        </NavigationContainer>
+      </SafeAreaProvider>
+    </GestureHandlerRootView>
   );
 }
 
-const styles = StyleSheet.create({
-  sectionContainer: {
-    marginTop: 32,
-    paddingHorizontal: 24,
-  },
-  sectionTitle: {
-    fontSize: 24,
-    fontWeight: '600',
-  },
-  sectionDescription: {
-    marginTop: 8,
-    fontSize: 18,
-    fontWeight: '400',
-  },
-  highlight: {
-    fontWeight: '700',
-  },
-});
+function App() {
+  return (
+    <AnimeErrorProvider>
+      <MusicProvider>
+        <AppContent />
+      </MusicProvider>
+    </AnimeErrorProvider>
+  );
+}
 
 export default App;

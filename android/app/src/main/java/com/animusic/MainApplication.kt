@@ -1,4 +1,4 @@
-package com.animusic2
+package com.animusic
 
 import android.app.Application
 import com.facebook.react.PackageList
@@ -20,6 +20,9 @@ class MainApplication : Application(), ReactApplication {
             PackageList(this).packages.apply {
               // Packages that cannot be autolinked yet can be added manually here, for example:
               // add(MyReactNativePackage())
+              // Custom packages commented out for now
+              // add(MusicDeletePackage())
+              // add(HoneywellPrinterPackage())
             }
 
         override fun getJSMainModuleName(): String = "index"

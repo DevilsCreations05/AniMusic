@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "847348972299",
+    "project_id": "animusic-app",
+    "storage_bucket": "animusic-app.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:847348972299:android:animusicapp",
+        "android_client_info": {
+          "package_name": "com.animusic"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "847348972299-android.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.animusic",
+            "certificate_hash": "5e8f16062ea3cd2c4a0d547876baa6f38cabf625"
+          }
+        },
+        {
+          "client_id": "847348972299-6058dnia0e9hgoi4bvgt36frmoevkj43.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBaMqLZeJ3Sx7V3nnZViG7yH8WqJz5yEXs"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "847348972299-6058dnia0e9hgoi4bvgt36frmoevkj43.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
